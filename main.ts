@@ -4,7 +4,7 @@
 // The entry is a fixed string: the program is deterministic and writes
 // exactly this text, no trailing newline, so the gate sees 1-200
 // characters of UTF-8 and nothing else.
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const ENTRY = "My bank emailed 'We miss you!' \u2014 bold, from the institution charging me $12 a month for the privilege of being missed.";
@@ -16,4 +16,11 @@ if (ENTRY.length < 1 || ENTRY.length > 200 || !ENTRY.trim()) {
 
 const outDir = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
 mkdirSync(outDir, { recursive: true });
-writeFileSync(join(outDir, 'entry.txt'), ENTRY, 'utf8');
+const target = join(outDir, 'entry.txt');
+writeFileSync(target, ENTRY, 'utf8');
+
+// Verify the write round-trips byte for byte: what the grader reads
+// must be exactly the entry above, with nothing appended or lost.
+if (readFileSync(target, 'utf8') !== ENTRY) {
+  throw new Error('entry.txt does not match ENTRY after writing');
+}
